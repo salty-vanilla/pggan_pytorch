@@ -21,7 +21,7 @@ class ConvBlock(torch.nn.Module):
         self.net = torch.nn.Sequential()
 
         if sampling == 'upsampling':
-            self.add_module('up', torch.nn.UpsamplingNearest2d(2))
+            self.net.add_module('up', torch.nn.UpsamplingNearest2d(2))
 
         padding = kernel_size // 2 if padding == 'same' else 0
         if sampling in ['same', 'max_pool', 'avg_pool']:
@@ -29,6 +29,12 @@ class ConvBlock(torch.nn.Module):
                                    out_ch,
                                    kernel_size,
                                    stride=1,
+                                   padding=padding)
+        elif sampling == 'stride':
+            conv = torch.nn.Conv2d(in_ch,
+                                   out_ch,
+                                   kernel_size,
+                                   stride=2,
                                    padding=padding)
         elif sampling == 'deconv':
             conv = torch.nn.ConvTranspose2d(in_ch,
@@ -56,15 +62,16 @@ class ConvBlock(torch.nn.Module):
                 raise ValueError
             self.net.add_module('norm', norm)
 
-        self.add_module('act', activation)
+        if activation is not None:
+            self.net.add_module('act', activation)
 
         if dropout_rate != 0.0:
-            self.add_module('dropout', torch.nn.Dropout2d(dropout_rate))
+            self.net.add_module('dropout', torch.nn.Dropout2d(dropout_rate))
 
         if sampling == 'max_pool':
-            self.add_module('pool', torch.nn.MaxPool2d(2, 2))
+            self.net.add_module('pool', torch.nn.MaxPool2d(2, 2))
         elif sampling == 'avg_pool':
-            self.add_module('pool', torch.nn.AvgPool2d(2, 2))
+            self.net.add_module('pool', torch.nn.AvgPool2d(2, 2))
         else:
             pass
 

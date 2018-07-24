@@ -5,6 +5,7 @@ from blocks import ConvBlock
 class FirstGeneratorBlock(torch.nn.Module):
     def __init__(self, input_dim,
                  out_ch):
+        super().__init__()
         self.input_dim = input_dim
         self.conv1 = ConvBlock(input_dim,
                                out_ch,
@@ -14,7 +15,6 @@ class FirstGeneratorBlock(torch.nn.Module):
                                out_ch,
                                sampling='same',
                                normalization='pixel')
-        super().__init__()
 
     def forward(self, x):
         x = x.view(-1, self.input_dim, 1, 1)
@@ -28,6 +28,7 @@ class GeneratorBlock(torch.nn.Module):
     def __init__(self, in_ch,
                  out_ch,
                  upsampling='upsampling'):
+        super().__init__()
         self.up = ConvBlock(in_ch,
                             out_ch,
                             sampling=upsampling)
@@ -39,7 +40,6 @@ class GeneratorBlock(torch.nn.Module):
                                out_ch,
                                sampling='same',
                                normalization='pixel')
-        super().__init__()
 
     def forward(self, x):
         x = self.up(x)
