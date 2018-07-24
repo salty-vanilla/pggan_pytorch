@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def _tile(a, dim, n_tile):
@@ -28,7 +29,7 @@ class MiniBatchStddev(torch.nn.Module):
         y = torch.mean(y.view(-1, c*h*w), dim=-1, keepdim=True)
         y = y.unsqueeze(-1)
         y = y.unsqueeze(-1)
-        y = _tile(y, 0, bs // self.group_size)
+        y = _tile(y, 0, self.group_size)
         y = _tile(y, 3, w)
         y = _tile(y, 2, h)
         return torch.cat((x, y), dim=1)
