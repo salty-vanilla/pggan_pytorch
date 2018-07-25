@@ -18,11 +18,13 @@ class ConvBlock(torch.nn.Module):
         assert normalization in ['batch', 'layer', 'pixel', 'instance', None]
         super().__init__()
 
+        # upsampling
         self.net = torch.nn.Sequential()
 
         if sampling == 'upsampling':
             self.net.add_module('up', torch.nn.UpsamplingNearest2d(2))
 
+        # convolution
         padding = kernel_size // 2 if padding == 'same' else 0
         if sampling in ['same', 'max_pool', 'avg_pool']:
             conv = torch.nn.Conv2d(in_ch,
@@ -49,6 +51,7 @@ class ConvBlock(torch.nn.Module):
             raise ValueError
         self.net.add_module('conv', conv)
 
+        # normalization
         if normalization is not None:
             if normalization == 'batch':
                 norm = torch.nn.BatchNorm2d(out_ch)
@@ -62,12 +65,15 @@ class ConvBlock(torch.nn.Module):
                 raise ValueError
             self.net.add_module('norm', norm)
 
+        # activation
         if activation is not None:
             self.net.add_module('act', activation)
 
+        # dropout
         if dropout_rate != 0.0:
             self.net.add_module('dropout', torch.nn.Dropout2d(dropout_rate))
 
+        # pooling
         if sampling == 'max_pool':
             self.net.add_module('pool', torch.nn.MaxPool2d(2, 2))
         elif sampling == 'avg_pool':
