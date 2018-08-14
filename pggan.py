@@ -1,6 +1,7 @@
 import torch
 import time
 import os
+import numpy as np
 from PIL import Image
 from generator import Generator
 from disciriminator import Discriminator
@@ -55,6 +56,7 @@ class PGGAN:
                   '='*10)
             for epoch in range(1, nb_epoch+1):
                 print('Epoch %d / %d' % (epoch, nb_epoch))
+                start = time.time()
                 for iter_, x in data_loader:
                     bs = x_real.shape[0]
 
@@ -66,19 +68,22 @@ class PGGAN:
 
                     self.discriminator.zero_grad()
                     x_real = x.to(self.device)
-                    d_x_real = self.discriminator(x_real)
+                    d_x_real = self.discriminator(x_real, 
+                                                  growing_step=growing_step)
                     d_x_real = -d_x_real.mean()
                     d_x_real.backward()
 
                     z = self.z_sampler.sample((bs, self.input_dim))
                     z = z.to(self.device)
                     x_fake = self.generator(z)
-                    d_x_fake = self.discriminator(x_fake)
+                    d_x_fake = self.discriminator(x_fake, 
+                                                  growing_step=growing_step)
                     d_x_fake = d_x_fake.mean()
                     d_x_fake.backward()
                     
                     gradient_penalty = self.calc_gradient_panalty(x_real,
-                                                                  x_fake)
+                                                                  x_fake, 
+                                                                  growing_step)
                     ((gradient_penelty*self.lambda_).mean()).backward()             
                     opt_d.step()
 
@@ -92,12 +97,14 @@ class PGGAN:
                     z = self.z_sampler.sample((bs, self.input_dim))
                     z = z.to(self.device)
                     x_fake = self.generator(z)
-                    _d_x_fake = self.discriminator(x_fake)
+                    _d_x_fake = self.discriminator(x_fake,
+                                                   growing_step=growing_step)
                     _d_x_fake = -_d_x_fake.mean()
                     _d_x_fake.backward()
                     opt_g.step()
 
-                    print('WD: %.3f' % -d_x_real.item()+d_x_fake.item(),
+                    print('%.1[s]' % time.time() - start,
+                          'WD: %.3f' % -d_x_real.item()+d_x_fake.item(),
                           'GP: %.3f' % ((gradient_penelty*self.lambda_).mean()).item(),
                           'Loss_g: %.3f' % _d_x_fake.item(), 
                           end='\r')
@@ -114,13 +121,15 @@ class PGGAN:
                                        x_fake)
 
     def calc_gradient_panalty(self, x_real, 
-                              x_fake):
+                              x_fake, 
+                              growing_step):
         bs = x_real.shape[0]
         alpha = torch.rand(bs, 1, 1, 1)
         alpha = alpha.to(self.device)
 
         interpolates = alpha*d_x_real + (1.-alpha)*d_x_fake
-        d_x_inter = self.discriminator(interpolates)
+        d_x_inter = self.discriminator(interpolates, 
+                                       growing_step=growging_step)
 
         gradients = torch.autograd.grad(outputs=d_x_inter,
                                         inputs=interpolates,
