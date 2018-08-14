@@ -8,7 +8,7 @@ class PixelNorm(torch.nn.Module):
 
     def forward(self, x):
         norm = torch.mean(x**2,
-                          axis=1,
+                          dim=1,
                           keepdim=True)
         return x / (norm + self.eps) ** 0.5
 
