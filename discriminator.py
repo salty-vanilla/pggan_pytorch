@@ -99,5 +99,7 @@ class Discriminator(torch.nn.Module):
 if __name__ == '__main__':
     import numpy as np
     d = Discriminator(nb_growing=5, downsampling='max_pool')
-    _x = np.random.normal(size=(4, 3, 64, 64))
-    d.forward(_x, 4)
+    for i in range(5):
+        _x = np.random.normal(size=(4, 3, 4*(2**i), 4*(2**i)))
+        o = d(_x, i)
+        print(o.size())
