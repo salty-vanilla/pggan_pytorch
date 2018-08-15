@@ -129,7 +129,7 @@ class PGGAN:
 
         interpolates = alpha*d_x_real + (1.-alpha)*d_x_fake
         d_x_inter = self.discriminator(interpolates, 
-                                       growing_step=growging_step)
+                                       growing_step=growing_step)
 
         gradients = torch.autograd.grad(outputs=d_x_inter,
                                         inputs=interpolates,
