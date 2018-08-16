@@ -88,10 +88,19 @@ class Discriminator(torch.nn.Module):
         self.dense = torch.nn.Linear(self.filters[0], 1)
 
     def forward(self, x,
-                growing_step):
+                growing_step,
+                alpha=1.):
+        is_resl = alpha != 1. and growing_step != 0.
+        if is_resl:
+            _x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+            _x = self.from_rgbs[growing_step](_x)
+
         x = self.from_rgbs[growing_step](x)
         for i in range(growing_step+1)[::-1]:
             x = self.blocks[i](x)
+
+            if is_resl and i == growing_step:
+                x = alpha*x + (1.-alpha)*_x      
 
         x = self.dense(x)
         return x

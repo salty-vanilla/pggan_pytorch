@@ -86,11 +86,21 @@ class Generator(torch.nn.Module):
             self.add_module('to_rgb_%d' % i, self.to_rgbs[-1])
 
     def forward(self, x,
-                growing_step):
+                growing_step,
+                alpha=1.):
+        is_resl = alpha != 1. and growing_step != 0
         # x = torch.Tensor(x)
         for i in range(growing_step+1):
             x = self.blocks[i](x)
+
+            if is_resl and i == growing_step - 1:
+                _x = torch.nn.functional.upsample(x, 2)
+                _x = self.to_rgbs[growing_step](_x)
+
         x = self.to_rgbs[growing_step](x)
+
+        if is_resl:
+            x = alpha*x + (1.-alpha)*_x
         return x
 
 

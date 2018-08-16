@@ -1,6 +1,7 @@
 import torch
 import time
 import os
+import numpy as np
 from utils.image import tile_images
 from generator import Generator
 from discriminator import Discriminator
@@ -72,12 +73,15 @@ class Solver:
                 print('\nEpoch %d / %d' % (epoch, nb_epoch))
                 start = time.time()
                 for iter_, x in enumerate(data_loader):
+                    alpha = np.minimum(np.round(epoch/nb_epoch*2, 1), 1.)
+
                     # update discriminator
                     opt_d.zero_grad()
                     x_real = x.to(self.device)
                     bs = x_real.shape[0]
                     d_x_real = self.discriminator(x_real, 
-                                                  growing_step=growing_step)
+                                                  growing_step=growing_step,
+                                                  alpha=alpha)
                     d_norm = (d_x_real**2).mean()
                     (d_norm*self.norm_eps).backward(retain_graph=True)
 
@@ -87,15 +91,18 @@ class Solver:
                     z = self.z_sampler.sample((bs, self.input_dim))
                     z = z.to(self.device)
                     x_fake = self.generator(z,
-                                            growing_step=growing_step)
+                                            growing_step=growing_step,
+                                            alpha=alpha)
                     d_x_fake = self.discriminator(x_fake, 
-                                                  growing_step=growing_step)
+                                                  growing_step=growing_step,
+                                                  alpha=alpha)
                     d_x_fake = d_x_fake.mean()
                     d_x_fake.backward()
                     
                     gradient_penalty = self.calc_gradient_penalty(x_real,
                                                                   x_fake,
-                                                                  growing_step)
+                                                                  growing_step,
+                                                                  alpha)
                     ((gradient_penalty*self.lambda_).mean()).backward()
                     opt_d.step()
 
@@ -104,9 +111,11 @@ class Solver:
                     z = self.z_sampler.sample((bs, self.input_dim))
                     z = z.to(self.device)
                     x_fake = self.generator(z,
-                                            growing_step=growing_step)
+                                            growing_step=growing_step,
+                                            alpha=alpha)
                     _d_x_fake = self.discriminator(x_fake,
-                                                   growing_step=growing_step)
+                                                   growing_step=growing_step,
+                                                   alpha=alpha)
                     _d_x_fake = -_d_x_fake.mean()
                     _d_x_fake.backward()
                     opt_g.step()
@@ -131,15 +140,17 @@ class Solver:
 
     def calc_gradient_penalty(self, x_real,
                               x_fake,
-                              growing_step):
+                              growing_step,
+                              alpha):
         bs = x_real.shape[0]
-        alpha = torch.rand(bs, 1, 1, 1)
-        alpha = alpha.to(self.device)
+        phi = torch.rand(bs, 1, 1, 1)
+        phi = phi.to(self.device)
 
-        interpolates = alpha*x_real + (1.-alpha)*x_fake
+        interpolates = phi*x_real + (1.-phi)*x_fake
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
         x_inter = self.discriminator(interpolates,
-                                     growing_step=growing_step)
+                                     growing_step=growing_step,
+                                     alpha=alpha)
 
         gradients = torch.autograd.grad(outputs=x_inter,
                                         inputs=interpolates,
