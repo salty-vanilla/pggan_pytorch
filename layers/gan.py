@@ -7,12 +7,16 @@ def _tile(x, dim, n_tile):
     repeat_idx = [1] * x.dim()
     repeat_idx[dim] = n_tile
     x = x.repeat(*repeat_idx)
-    if isinstance(x, torch.Tensor):
-        order_index = torch.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
-                                                       for i in range(init_dim)]))
-    else:
-        order_index = torch.cuda.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
-                                                            for i in range(init_dim)]))
+    order_index = torch.cuda.LongTensor(np.concatenate([init_dim * np.arange(n_tile) + i
+                                                        for i in range(init_dim)]))
+
+    # TODO Adaptation of CPU and GPU.
+    # if isinstance(x, torch.Tensor):
+    #     order_index = torch.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
+    #                                                    for i in range(init_dim)]))
+    # else:
+    #     order_index = torch.cuda.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
+    #                                                         for i in range(init_dim)]))
     return torch.index_select(x, dim, order_index)
 
 
