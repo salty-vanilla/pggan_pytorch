@@ -47,6 +47,7 @@ class GeneratorBlock(torch.nn.Module):
         x = self.conv2(x)
         return x
 
+
 class ToRGB(torch.nn.Module):
     def __init__(self, in_ch):
         super().__init__()
@@ -75,20 +76,19 @@ class Generator(torch.nn.Module):
             if i == 0:
                 self.blocks.append(FirstGeneratorBlock(input_dim,
                                                        self.filters[i]))
-                self.to_rgbs.append(ToRGB(self.filters[i]))
             else:
                 self.blocks.append(GeneratorBlock(self.filters[i-1],
                                                   self.filters[i],
                                                   upsampling))
-                self.to_rgbs.append(ToRGB(self.filters[i]))
-            print(self.blocks[-1])
-    
+            self.to_rgbs.append(ToRGB(self.filters[i]))
+            self.add_module('generator_block_%d' % i, self.blocks[-1])
+            self.add_module('to_rgb_%d' % i, self.to_rgbs[-1])
+
     def forward(self, x,
                 growing_step):
-        x = torch.Tensor(x)
+        # x = torch.Tensor(x)
         for i in range(growing_step+1):
             x = self.blocks[i](x)
-        # print(self.to_rgbs[growing_step])
         x = self.to_rgbs[growing_step](x)
         return x
 

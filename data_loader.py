@@ -1,4 +1,4 @@
-
+import functools
 from torchvision import datasets, transforms
 import torch
 from PIL import Image
@@ -19,7 +19,7 @@ class Dataset(torch.utils.data.Dataset):
         if is_flip:
             self.transform.append(transforms.RandomVerticalFlip())
         self.transform.append(transforms.ToTensor())
-        self.transform.append(transforms.Lambda(lambda x: (x/255 - 0.5)*2))
+        self.transform.append(transforms.Lambda(lambda x: (x - 0.5)*2))
         self.transform = transforms.Compose(self.transform)
         self._length = 0
         self._get_item = None
@@ -32,14 +32,14 @@ class Dataset(torch.utils.data.Dataset):
              **kwargs):
         def _get_item(index):
             image = x[index]
-            label = y[index] if labels is not None else None
+            label = y[index] if y is not None else None
             image = self.transform(image)
             if label is None:
                 return image
             else:   
                 return image, label
 
-        self._getitem = _get_item
+        self._get_item = _get_item
         self._length = len(x)
         return torch.utils.data.DataLoader(self, batch_size, 
                                            shuffle,
@@ -52,9 +52,9 @@ class Dataset(torch.utils.data.Dataset):
                             *args,
                             **kwargs):
         if with_labels:
-            dirs = dirs = [os.path.join(image_dir, f)
-                           for f in os.listdir(image_dir)
-                           if os.path.isdir(os.path.join(image_dir, f))]
+            dirs = [os.path.join(image_dir, f)
+                    for f in os.listdir(image_dir)
+                    if os.path.isdir(os.path.join(image_dir, f))]
             dirs = sorted(dirs)
             image_paths = [get_image_paths(d) for d in dirs]
             labels = []
@@ -87,16 +87,17 @@ class Dataset(torch.utils.data.Dataset):
                 return image
             else:
                 return image, label
-        self._getitem = _get_item
+        self._get_item = _get_item
         self._length = len(paths)
         return torch.utils.data.DataLoader(self, batch_size, 
                                            shuffle,
                                            **kwargs)
+
     def __len__(self):
         return self._length
 
     def __getitem__(self, index):
-        return self._getitem(index)
+        return self._get_item(index)
 
 
 def get_image_paths(src_dir):

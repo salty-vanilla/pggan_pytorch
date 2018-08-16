@@ -2,14 +2,18 @@ import torch
 import numpy as np
 
 
-def _tile(a, dim, n_tile):
-    init_dim = a.size(dim)
-    repeat_idx = [1] * a.dim()
+def _tile(x, dim, n_tile):
+    init_dim = x.size(dim)
+    repeat_idx = [1] * x.dim()
     repeat_idx[dim] = n_tile
-    a = a.repeat(*repeat_idx)
-    order_index = torch.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
-                                                   for i in range(init_dim)]))
-    return torch.index_select(a, dim, order_index)
+    x = x.repeat(*repeat_idx)
+    if isinstance(x, torch.Tensor):
+        order_index = torch.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
+                                                       for i in range(init_dim)]))
+    else:
+        order_index = torch.cuda.LongTensor(np.concatenate([init_dim*np.arange(n_tile) + i
+                                                            for i in range(init_dim)]))
+    return torch.index_select(x, dim, order_index)
 
 
 class MiniBatchStddev(torch.nn.Module):
@@ -19,8 +23,7 @@ class MiniBatchStddev(torch.nn.Module):
         self.eps = 1e-8
 
     def forward(self, x):
-        x = torch.Tensor(x)
-        y = torch.Tensor(x)
+        y = x.clone()
         bs, c, h, w = list(y.size())
         y = y.view(self.group_size, bs//self.group_size, c, h, w)
         y -= torch.mean(y, dim=0, keepdim=True)

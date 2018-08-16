@@ -72,7 +72,7 @@ class Discriminator(torch.nn.Module):
         self.downsampling = downsampling
 
         self.blocks = []
-        self.from_rbgs = []
+        self.from_rgbs = []
 
         for i in range(nb_growing):
             if i == 0:
@@ -82,13 +82,15 @@ class Discriminator(torch.nn.Module):
                 self.blocks.append(DiscriminatorBlock(self.filters[i],
                                                       self.filters[i-1],
                                                       self.downsampling))
-            self.from_rbgs.append(FromRGB(self.filters[i]))
+            self.from_rgbs.append(FromRGB(self.filters[i]))
+            self.add_module('discriminator_block_%d' % i, self.blocks[-1])
+            self.add_module('from_rgb_%d' % i, self.from_rgbs[-1])
 
         self.dense = torch.nn.Linear(self.filters[0], 1)
 
     def forward(self, x,
                 growing_step):
-        x = self.from_rbgs[growing_step](torch.Tensor(x))
+        x = self.from_rgbs[growing_step](x)
         for i in range(growing_step+1)[::-1]:
             x = self.blocks[i](x)
 
