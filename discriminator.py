@@ -36,8 +36,7 @@ class LastDiscriminatorBlock(torch.nn.Module):
                               out_ch,
                               kernel_size=4,
                               padding='valid',
-                              normalization=None,
-                              activation=None)
+                              normalization='instance')
         self.norm = torch.nn.LayerNorm(out_ch)
 
     def forward(self, x):
