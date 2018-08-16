@@ -15,6 +15,8 @@ class Solver:
                  device='cuda',
                  lambda_=10.,
                  norm_eps=1e-3):
+        if device == 'cuda':
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
         self.input_dim = input_dim
         self.nb_growing = nb_growing
         self.device = device
