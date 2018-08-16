@@ -26,7 +26,7 @@ class ConvBlock(torch.nn.Module):
 
         # convolution
         padding = kernel_size // 2 if padding == 'same' else 0
-        if sampling in ['same', 'max_pool', 'avg_pool']:
+        if sampling in ['same', 'max_pool', 'avg_pool', 'upsampling']:
             conv = torch.nn.Conv2d(in_ch,
                                    out_ch,
                                    kernel_size,
