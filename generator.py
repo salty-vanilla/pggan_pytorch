@@ -31,7 +31,8 @@ class GeneratorBlock(torch.nn.Module):
         super().__init__()
         self.up = ConvBlock(in_ch,
                             in_ch,
-                            sampling=upsampling)
+                            sampling=upsampling,
+                            normalization='pixel')
         self.conv1 = ConvBlock(in_ch,
                                in_ch,
                                sampling='same',
