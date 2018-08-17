@@ -93,9 +93,9 @@ class Generator(torch.nn.Module):
         for i in range(growing_step+1):
             x = self.blocks[i](x)
 
-            if is_resl and i == growing_step - 1:
-                _x = torch.nn.functional.upsample(x, 2)
-                _x = self.to_rgbs[growing_step](_x)
+            if is_resl and i == growing_step-1:
+                _x = torch.nn.functional.upsample(x, scale_factor=2)
+                _x = self.to_rgbs[growing_step-1](_x)
 
         x = self.to_rgbs[growing_step](x)
 

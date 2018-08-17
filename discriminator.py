@@ -90,17 +90,17 @@ class Discriminator(torch.nn.Module):
     def forward(self, x,
                 growing_step,
                 alpha=1.):
-        is_resl = alpha != 1. and growing_step != 0.
+        is_resl = alpha != 1. and growing_step != 0
         if is_resl:
             _x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
-            _x = self.from_rgbs[growing_step](_x)
+            _x = self.from_rgbs[growing_step-1](_x)
 
         x = self.from_rgbs[growing_step](x)
         for i in range(growing_step+1)[::-1]:
             x = self.blocks[i](x)
 
             if is_resl and i == growing_step:
-                x = alpha*x + (1.-alpha)*_x      
+                x = alpha*x + (1.-alpha)*_x
 
         x = self.dense(x)
         return x
@@ -108,8 +108,9 @@ class Discriminator(torch.nn.Module):
 
 if __name__ == '__main__':
     import numpy as np
-    d = Discriminator(nb_growing=5, downsampling='max_pool')
-    for i in range(5):
+    d = Discriminator(nb_growing=8, downsampling='max_pool')
+    d.cuda()
+    for i in range(8):
         _x = np.random.normal(size=(4, 3, 4*(2**i), 4*(2**i)))
-        o = d(_x, i)
+        o = d(torch.Tensor(_x).cuda(), i, 0.5)
         print(o.size())

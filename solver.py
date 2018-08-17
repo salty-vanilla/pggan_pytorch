@@ -73,7 +73,8 @@ class Solver:
                 print('\nEpoch %d / %d' % (epoch, nb_epoch))
                 start = time.time()
                 for iter_, x in enumerate(data_loader):
-                    alpha = np.minimum(np.round(epoch/nb_epoch*2, 1), 1.)
+                    alpha = np.minimum(np.round(epoch/nb_epoch*2., 1), 1.)
+                    alpha = float(alpha)
 
                     # update discriminator
                     opt_d.zero_grad()
@@ -173,6 +174,6 @@ class Solver:
 if __name__ == '__main__':
     gan = Solver(nb_growing=6)
     gan.fit('/home/nakatsuka/unstudy/dataset/imas/faces',
-            logdir='../logs/debug4',
+            logdir='../logs/debug6',
             nb_epoch=100,
-            batch_size=[32, 32, 32, 16, 8, 8])
+            batch_size=[32, 32, 32, 16, 10, 10])
