@@ -8,12 +8,12 @@ Progressive Growing of GANs for Improved Quality, Stability, and Variation [[pap
 
 ## Results
 
-<img src='assets/result_4-4.gif'>
-<img src='assets/result_8-8.gif'>
-<img src='assets/result_16-16.gif'>
-<img src='assets/result_32-32.gif'>
-<img src='assets/result_64-64.gif'>
-<img src='assets/result_128-128.gif'>
+<img src='assets/result_4-4.gif' width=200>
+<img src='assets/result_8-8.gif' width=200>
+<img src='assets/result_16-16.gif' width=200>
+<img src='assets/result_32-32.gif' width=200>
+<img src='assets/result_64-64.gif' width=200>
+<img src='assets/result_128-128.gif' width=200>
 
 ## TBR
 * poor diversity
