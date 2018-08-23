@@ -17,7 +17,7 @@ class Dataset(torch.utils.data.Dataset):
                 target_size = (target_size[1], target_size[0])
             self.transform.append(transforms.Resize(target_size))
         if is_flip:
-            self.transform.append(transforms.RandomVerticalFlip())
+            self.transform.append(transforms.RandomHorizontalFlip())
         self.transform.append(transforms.ToTensor())
         self.transform.append(transforms.Lambda(lambda x: (x - 0.5)*2))
         self.transform = transforms.Compose(self.transform)
