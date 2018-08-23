@@ -15,7 +15,9 @@ class Solver:
                  downsampling='avg_pool',
                  device='cuda',
                  lambda_=10.,
-                 norm_eps=1e-3):
+                 norm_eps=1e-3,
+                 initial_alpha=0.,
+                 delta=None):
         if device == 'cuda':
             torch.set_default_tensor_type('torch.cuda.FloatTensor')
         self.input_dim = input_dim
@@ -23,6 +25,8 @@ class Solver:
         self.device = device
         self.lambda_ = lambda_
         self.norm_eps = norm_eps
+        self.initial_alpha = initial_alpha
+        self.delta = delta
         self.generator = Generator(input_dim=input_dim,
                                    nb_growing=nb_growing,
                                    upsampling=upsampling).to(device)
@@ -61,7 +65,8 @@ class Solver:
             current_logdir = os.path.join(logdir, 'growing_step_%d' % (growing_step+1))
             os.makedirs(current_logdir, exist_ok=True)
 
-            dataset = Dataset(target_size=self.resolutions[growing_step])
+            dataset = Dataset(target_size=self.resolutions[growing_step],
+                              is_flip=True)
             data_loader = dataset.flow_from_directory(image_dir, 
                                                       batch_size=batch_sizes[growing_step])
             print('\n'+('='*20),
@@ -69,17 +74,23 @@ class Solver:
                   '\n'+('='*20))
             self.discriminator.train()
             self.generator.train()
+
+            alpha = float(self.initial_alpha)
+            delta = self.delta if self.delta is not None \
+                else 5./nb_epoch/(len(dataset)//batch_sizes[growing_step])
+
             for epoch in range(1, nb_epoch+1):
                 print('\nEpoch %d / %d' % (epoch, nb_epoch))
                 start = time.time()
                 for iter_, x in enumerate(data_loader):
-                    alpha = np.minimum(np.round(epoch/nb_epoch*2., 1), 1.)
-                    alpha = float(alpha)
-
                     # update discriminator
                     opt_d.zero_grad()
                     x_real = x.to(self.device)
                     bs = x_real.shape[0]
+
+                    if bs != batch_sizes[growing_step]:
+                        continue
+
                     d_x_real = self.discriminator(x_real, 
                                                   growing_step=growing_step,
                                                   alpha=alpha)
@@ -127,6 +138,11 @@ class Solver:
                           'GP: %.3f' % (gradient_penalty.mean()).item(),
                           'Loss_g: %.3f' % _d_x_fake.item(), 
                           end='\r')
+
+                    alpha += delta
+                    alpha = np.minimum(alpha, 1.)
+                    alpha = float(alpha)
+
                 if epoch % save_steps == 0:
                     torch.save(self.generator.state_dict(),
                                os.path.join(current_logdir, 'generator_%d.pth' % epoch))
@@ -149,6 +165,7 @@ class Solver:
 
         interpolates = phi*x_real + (1.-phi)*x_fake
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+        interpolates = interpolates.to(self.device)
         x_inter = self.discriminator(interpolates,
                                      growing_step=growing_step,
                                      alpha=alpha)
@@ -163,17 +180,10 @@ class Solver:
         return gradient_penalty
 
     def init_weights(self, m):
-        if isinstance(m, torch.nn.Conv2d):
-            torch.nn.init.xavier_uniform(m.weight)
-            m.bias.data.fill_(0.0)
-        elif isinstance(m, torch.nn.ConvTranspose2d):
-            torch.nn.init.xavier_uniform(m.weight)
-            m.bias.data.fill_(0.0)
-
-
-if __name__ == '__main__':
-    gan = Solver(nb_growing=6)
-    gan.fit('/home/nakatsuka/unstudy/dataset/imas/faces',
-            logdir='../logs/debug6',
-            nb_epoch=100,
-            batch_size=[32, 32, 32, 16, 10, 10])
+        is_init = isinstance(m, torch.nn.Conv2d) \
+                or isinstance(m, torch.nn.ConvTranspose2d) \
+                or isinstance(m, torch.nn.Linear)
+        if is_init:
+            torch.nn.init.xavier_normal_(m.weight)
+            if m.bias is not None:
+                m.bias.data.fill_(0.0)
