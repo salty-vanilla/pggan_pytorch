@@ -55,8 +55,7 @@ class FromRGB(torch.nn.Module):
         self.conv = ConvBlock(3,
                               out_ch,
                               sampling='same',
-                              normalization='instance',
-                              activation=torch.nn.Tanh())
+                              normalization='instance')
 
     def forward(self, x):
         return self.conv(x)
